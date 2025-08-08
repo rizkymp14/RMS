@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kelola Pesanan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <div class="container mx-auto p-6">
+    <header class="flex justify-between items-center mb-6">
+      <div class="flex items-center gap-3">
+        <img src="assets/img/logo.jpg" alt="Logo Resto" class="h-10 w-10">
+        <h1 class="text-xl font-bold">Halaman Koki - Kelola Pesanan</h1>
+      </div>
+    </header>
+
+    <main class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Pesanan Masuk -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4">Pesanan Masuk</h2>
+        <div id="pesananMasuk" class="space-y-5 h-[80vh] overflow-y-auto custom-scrollbar pr-3"></div>
+      </section>
+
+      <!-- Pesanan Diterima -->
+      <section>
+        <h2 class="text-2xl font-bold mb-4">Pesanan Diterima</h2>
+        <div id="pesananDiterima" class="space-y-5 h-[80vh] overflow-y-auto custom-scrollbar pr-3"></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Notifikasi Toast -->
+  <div id="toast" class="hidden fixed top-5 right-5 bg-blue-500 text-white px-4 py-2 rounded shadow z-50"></div>
+
+  <script>
+    let pesananData = [];
+
+    function showToast(message, color = 'blue') {
+      const toast = document.getElementById("toast");
+      if (!toast) return;
+      toast.innerText = message;
+      toast.className = `fixed top-5 right-5 text-white px-4 py-2 rounded shadow z-50 bg-${color}-500`;
+      toast.classList.remove("hidden");
+      setTimeout(() => toast.classList.add("hidden"), 3000);
+    }
+
+    function terimaPesanan(index) {
+      if (confirm("Pesanan diterima?")) {
+        pesananData[index].status = "diterima";
+        showToast("Pesanan Diterima", "green");
+        renderPesanan();
+      }
+    }
+
+    function tolakPesanan(index) {
+      if (confirm("Pesanan ditolak?")) {
+        pesananData.splice(index, 1);
+        showToast("Pesanan Ditolak", "red");
+        renderPesanan();
+      }
+    }
+
+    function selesaiPesanan(index) {
+      if (confirm("Pesanan selesai dibuat?")) {
+        const diterimaPesanan = pesananData.filter(p => p.status === "diterima");
+        const globalIndex = pesananData.indexOf(diterimaPesanan[index]);
+        pesananData.splice(globalIndex, 1);
+        showToast("Pesanan Selesai", "blue");
+        renderPesanan();
+      }
+    }
+
+    function renderPesanan() {
+      const masuk = document.getElementById("pesananMasuk");
+      const diterima = document.getElementById("pesananDiterima");
+      masuk.innerHTML = "";
+      diterima.innerHTML = "";
+
+      pesananData.forEach((p, index) => {
+        const card = document.createElement("div");
+        card.className = "bg-gray-100 p-5 rounded-xl shadow-sm flex gap-4";
+
+        const isiPesanan = `
+          <div class="flex-grow">
+            <div class="mb-4">
+              <h3 class="font-bold text-xl">#${p.id}</h3>
+              <ul class="list-disc list-inside text-sm mt-2 text-gray-600">
+                ${p.pesanan.map(item => `<li>${item}</li>`).join("")}
+              </ul>
+            </div>
+            <div class="flex items-center gap-3">
+              ${p.status === 'masuk'
+                ? `<button onclick="terimaPesanan(${index})" class="bg-green-500 text-white font-semibold py-2 px-6 rounded-lg text-sm">TERIMA</button>
+                   <button onclick="tolakPesanan(${index})" class="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg text-sm">TOLAK</button>`
+                : `<button onclick="selesaiPesanan(${index})" class="bg-blue-500 text-white font-semibold py-2 px-8 rounded-lg text-sm">Selesai Dibuat</button>`
+              }
+            </div>
+          </div>
+          <div class="bg-gray-200 p-4 rounded-lg w-40 flex-shrink-0">
+            <h4 class="font-semibold text-sm mb-1">Catatan :</h4>
+            <ul class="list-disc list-inside text-sm text-gray-700">
+              <li>${p.catatan || '–'}</li>
+            </ul>
+          </div>
+        `;
+
+        card.innerHTML = isiPesanan;
+        (p.status === 'masuk' ? masuk : diterima).appendChild(card);
+      });
+    }
+
+    // Ambil data dari backend
+    fetch("../php/getOrders.php")
+      .then(res => {
+        if (!res.ok) throw new Error("Network response was not ok");
+        return res.json();
+      })
+      .then(data => {
+        if (data.success && Array.isArray(data.data)) {
+          pesananData = data.data.map(p => ({
+            id: p.id,
+            pesanan: Array.isArray(p.pesanan) ? p.pesanan : [],
+            catatan: p.catatan,
+            status: p.status
+          }));
+          renderPesanan();
+        } else {
+          showToast("Gagal mengambil data pesanan", "red");
+        }
+      })
+      .catch(err => {
+        console.error("Fetch error:", err);
+        // Dummy data fallback
+        pesananData = [
+          { id: "002", pesanan: ["Nasi Liwet", "Teh Manis", "Sop Iga"], catatan: "Tanpa sambal", status: "masuk" },
+          { id: "001", pesanan: ["Ayam Geprek", "Es Teh"], catatan: "Level pedas 2", status: "diterima" }
+        ];
+        renderPesanan();
+        showToast("Gagal ambil data, tampilkan dummy", "red");
+      });
+  </script>
+
+</body>
+</html>

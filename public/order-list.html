@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Order List</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <div class="max-w-2xl mx-auto p-4 pb-36">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between bg-white rounded-t-xl px-4 py-3 shadow">
+      <button onclick="goBack()" class="text-3xl font-bold">&lt;</button>
+      <h1 class="text-xl font-bold">ORDER LIST</h1>
+      <button onclick="toggleEdit()" id="editBtn" class="bg-blue-500 text-white text-sm font-semibold px-3 py-1 rounded-full">Edit</button>
+    </div>
+
+    <!-- Daftar Pesanan -->
+    <div class="bg-white px-4 py-4 rounded-b-xl shadow space-y-4" id="orderList"></div>
+
+    <!-- Catatan Tambahan -->
+    <div class="bg-white mt-4 p-4 rounded-xl shadow">
+      <label for="catatan" class="font-bold text-sm block mb-1">Catatan Tambahan :</label>
+      <textarea id="catatan" rows="3" class="w-full p-2 border border-black rounded-xl outline-none"></textarea>
+    </div>
+
+    <!-- Footer -->
+    <div class="fixed bottom-0 left-0 w-full bg-white px-6 py-4 shadow-inner flex justify-end items-center gap-4 z-50">
+      <div class="text-right">
+        <p class="text-sm font-bold text-gray-800">TOTAL</p>
+        <p id="totalHarga" class="text-xl font-bold text-gray-800">Rp. 0</p>
+      </div>
+      <button onclick="simpanOrder()" class="bg-red-500 hover:bg-red-600 text-black font-bold py-3 px-6 rounded-full">
+        Order Sekarang
+      </button>
+    </div>
+
+  </div>
+
+  <script>
+    let editMode = false;
+    let cart = JSON.parse(localStorage.getItem("rms_cart") || "[]");
+
+    function renderOrderList() {
+  const orderList = document.getElementById("orderList");
+  orderList.innerHTML = "";
+
+  if (cart.length === 0) {
+    orderList.innerHTML = `<p class="text-center text-gray-500">Belum ada pesanan.</p>`;
+    return;
+  }
+
+  cart.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "flex justify-between items-center border-b pb-2";
+
+    if (!editMode) {
+      div.innerHTML = `<span class="font-medium">${item.nama} x ${item.qty}</span>`;  // TAMBAH qty
+    } else {
+      div.innerHTML = `
+        <span class="font-medium w-1/3">${item.nama}</span>
+        <div class="flex items-center space-x-2 w-2/3 justify-end">
+          <button onclick="kurangiQty(${index})" class="bg-yellow-400 text-white font-bold px-3 py-1 rounded">−</button>
+          <span class="min-w-[24px] text-center">${item.qty}</span>
+          <button onclick="tambahQty(${index})" class="bg-green-500 text-white font-bold px-3 py-1 rounded">+</button>
+          <button onclick="hapusItem(${index})" class="bg-red-500 text-white px-3 py-1 rounded">Hapus</button>
+        </div>
+      `;
+    }
+
+    orderList.appendChild(div);
+  });
+
+  updateTotal();
+  simpanKeStorage();  // WAJIB tambahkan ini agar cart tersimpan!
+}
+
+
+    function toggleEdit() {
+      editMode = !editMode;
+      document.getElementById("editBtn").innerText = editMode ? "Selesai" : "Edit";
+      renderOrderList();
+    }
+
+    function kurangiQty(index) {
+      if (cart[index].qty > 1) {
+        cart[index].qty--;
+        simpanKeStorage();
+        renderOrderList();
+      }
+    }
+
+    function tambahQty(index) {
+      cart[index].qty++;
+      simpanKeStorage();
+      renderOrderList();
+    }
+
+    function hapusItem(index) {
+      cart.splice(index, 1);
+      simpanKeStorage();
+      renderOrderList();
+    }
+
+    function simpanKeStorage() {
+      localStorage.setItem("rms_cart", JSON.stringify(cart));
+    }
+
+    function updateTotal() {
+      const total = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+      document.getElementById("totalHarga").innerText = "Rp. " + total.toLocaleString();
+    }
+
+    function simpanOrder() {
+  const catatan = document.getElementById("catatan").value;
+
+  // Simpan catatan agar bisa dipakai di checkout (opsional)
+  localStorage.setItem("rms_catatan", catatan);
+
+  if (cart.length === 0) {
+    alert("Tidak ada pesanan. Tambahkan pesanan dulu.");
+    return;
+  }
+
+  alert("Pesanan siap. Lanjut ke checkout.");
+
+  // Jangan kirim ke PHP di sini!
+  // Biarkan checkout yang kirim dan hapus rms_cart setelah sukses
+
+  window.location.href = "checkout.html";
+}
+
+
+      
+
+    function goBack() {
+      window.location.href = "index.html";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      renderOrderList();
+    });
+  </script>
+
+</body>
+</html>

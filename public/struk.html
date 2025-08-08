@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Struk Pesanan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white font-sans p-6">
+
+  <div class="max-w-md mx-auto border rounded-xl p-6 shadow">
+    <h1 class="text-2xl font-bold text-center mb-4">STRUK PESANAN</h1>
+
+    <div class="mb-4">
+      <p class="font-semibold">Nama Pelanggan:</p>
+      <p id="namaPelanggan" class="text-gray-700"></p>
+    </div>
+
+    <div class="mb-4">
+      <p class="font-semibold">Waktu Pesan:</p>
+      <p id="waktuPesan" class="text-gray-700"></p>
+    </div>
+
+    <div class="mb-4">
+      <p class="font-semibold">Daftar Pesanan:</p>
+      <ul id="listPesanan" class="text-gray-700 list-disc list-inside space-y-1">
+        <!-- Diisi oleh JS -->
+      </ul>
+    </div>
+
+    <!-- Garis Pemisah -->
+    <hr class="my-4 border-gray-300" />
+
+    <!-- Total Harga Horizontal -->
+    <div class="flex justify-between items-center mt-2">
+      <p class="text-sm font-bold text-gray-600">TOTAL</p>
+      <p id="totalHarga" class="text-xl font-bold text-gray-800">Rp. 0</p>
+    </div>
+
+    <!-- Keterangan Bawah -->
+    <p class="text-xs text-gray-500 mt-4 italic text-center">
+      *Struk ini bersifat sementara bukan struk sebenarnya
+    </p>
+
+    <!-- Tombol OK -->
+    <div class="text-center mt-6">
+      <button onclick="keSelesai()" class="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-full">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <script>
+    const receipt = JSON.parse(localStorage.getItem("rms_receipt") || "{}");
+
+    function tampilkanStruk() {
+      if (!receipt || !receipt.pesanan || receipt.pesanan.length === 0) {
+        document.body.innerHTML = "<p class='text-center text-red-500 mt-10'>Tidak ada data struk ditemukan.</p>";
+        return;
+      }
+
+      document.getElementById("namaPelanggan").innerText = receipt.nama || "-";
+      document.getElementById("waktuPesan").innerText = receipt.waktu || "-";
+
+      const listPesanan = document.getElementById("listPesanan");
+      receipt.pesanan.forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = `${item.nama} x ${item.qty}`;
+        listPesanan.appendChild(li);
+      });
+
+      document.getElementById("totalHarga").innerText = "Rp. " + (receipt.total || 0).toLocaleString();
+    }
+
+    function keSelesai() {
+      localStorage.removeItem("rms_receipt");
+      window.location.href = "selesai.html";
+    }
+
+    document.addEventListener("DOMContentLoaded", tampilkanStruk);
+  </script>
+
+</body>
+</html>

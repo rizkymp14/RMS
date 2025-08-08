@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans relative">
+
+  <div class="max-w-2xl mx-auto p-4">
+    <!-- Header -->
+    <div class="flex items-center mb-4">
+      <button onclick="goBack()" class="text-3xl mr-2">&lt;</button>
+      <h1 class="text-xl font-bold">Checkout</h1>
+    </div>
+
+    <!-- Customer Info -->
+    <div class="bg-white p-6 rounded-xl shadow">
+      <h2 class="text-lg font-bold mb-3">CUSTOMER INFO</h2>
+      <label for="nama" class="block text-sm font-semibold mb-1">Name <span class="text-red-500">*</span></label>
+      <input type="text" id="nama" placeholder="Enter Your Name" class="w-full mb-4 p-2 border-b focus:outline-none"/>
+
+      <!-- List Pesanan -->
+      <ul id="daftarMenu" class="bg-gray-100 p-4 rounded space-y-1 text-gray-800 text-sm">
+        <!-- Diisi oleh JS -->
+      </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="fixed bottom-0 left-0 w-full bg-white px-6 py-4 shadow-inner flex justify-between items-center z-40">
+      <div>
+        <p class="text-sm font-bold text-gray-600">TOTAL</p>
+        <p id="checkoutTotal" class="text-xl font-bold text-gray-800">Rp. 0</p>
+      </div>
+      <button onclick="tampilkanKonfirmasi()" class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-6 rounded-full">
+        Order Sekarang
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Konfirmasi -->
+  <div id="popupKonfirmasi" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl p-6 w-[90%] max-w-md text-center">
+      <h2 class="text-xl font-bold mb-2">Konfirmasi Pesanan</h2>
+      <p class="text-gray-700 mb-6">Apakah Anda yakin dengan pesanan Anda?</p>
+      <div class="flex justify-center gap-4">
+        <button onclick="submitCheckout()" class="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-full">Ya, Pesan</button>
+        <button onclick="tutupKonfirmasi()" class="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-full">Tidak</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let cart = JSON.parse(localStorage.getItem("rms_cart") || "[]");
+
+    function tampilkanPesanan() {
+      console.log("Cart dari LocalStorage:", cart);  // Debug
+      const daftarMenu = document.getElementById("daftarMenu");
+      const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
+      document.getElementById("checkoutTotal").innerText = "Rp. " + total.toLocaleString();
+
+      daftarMenu.innerHTML = "";
+
+      if (cart.length === 0) {
+        daftarMenu.innerHTML = `<li class="text-gray-500 italic">Belum ada pesanan.</li>`;
+        return;
+      }
+
+      cart.forEach(item => {
+        const li = document.createElement("li");
+        li.innerText = `• ${item.nama} x ${item.qty}`;
+        daftarMenu.appendChild(li);
+      });
+    }
+
+    function tampilkanKonfirmasi() {
+      const nama = document.getElementById("nama").value.trim();
+      if (nama === "") {
+        alert("Nama harus diisi terlebih dahulu.");
+        return;
+      }
+      if (cart.length === 0) {
+        alert("Tidak ada pesanan.");
+        return;
+      }
+      document.getElementById("popupKonfirmasi").classList.remove("hidden");
+    }
+
+    function tutupKonfirmasi() {
+      document.getElementById("popupKonfirmasi").classList.add("hidden");
+    }
+
+    function submitCheckout() {
+  const nama = document.getElementById("nama").value.trim();
+  const total = cart.reduce((sum, item) => sum + item.harga * item.qty, 0);
+
+  const pesanan = {
+    nama,
+    pesanan: cart,
+    total,
+    waktu: new Date().toLocaleString()
+  };
+
+  // Simpan ke localStorage untuk struk
+  localStorage.setItem("rms_receipt", JSON.stringify(pesanan));
+
+  // ✅ Tambahan: Simpan ke daftar pesanan
+  let daftar = JSON.parse(localStorage.getItem("rms_daftar_pesanan") || "[]");
+  daftar.push({
+    nama,
+    meja: "1",  // Bisa diganti jika ada input meja
+    pesanan: cart.map(item => `${item.nama} x ${item.qty}`),
+    waktu: pesanan.waktu
+  });
+  localStorage.setItem("rms_daftar_pesanan", JSON.stringify(daftar));
+
+  // Kirim ke backend (opsional)
+  fetch("../php/addOrder.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      nama,
+      pesanan: cart,
+      total
+    })
+  })
+  .then(res => res.json())
+  .then(response => {
+    console.log(response.message);
+  });
+
+  localStorage.removeItem("rms_cart");
+  window.location.href = "struk.html";
+}
+
+
+    function goBack() {
+      window.history.back();
+    }
+
+    document.addEventListener("DOMContentLoaded", tampilkanPesanan);
+  </script>
+
+</body>
+</html>

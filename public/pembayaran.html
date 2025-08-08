@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Metode Pembayaran</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-[#1f4e85] text-white py-4 flex justify-between items-center px-6">
+    <button onclick="history.back()" class="text-white text-2xl">&larr;</button>
+    <h1 class="text-xl font-semibold">Restaurant</h1>
+    <div class="w-8 h-8 bg-black rounded-full"></div>
+  </header>
+
+  <!-- Konten -->
+  <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- Info Pelanggan -->
+    <div class="border border-gray-200 rounded-xl p-6 shadow-md">
+      <h2 class="text-xl font-bold text-[#1f4e85] mb-4">CUSTOMER INFO</h2>
+      <p id="infoMeja" class="text-lg font-semibold">No Meja : -</p>
+      <p id="namaPelanggan" class="text-lg mb-4">Nama : -</p>
+      <ul id="daftarMenu" class="list-disc list-inside space-y-1 text-gray-700"></ul>
+    </div>
+
+    <!-- Metode Pembayaran -->
+    <div class="border border-gray-200 rounded-xl p-6 shadow-md">
+      <h2 class="text-xl font-bold text-[#1f4e85] mb-4">PAYMENT METHODS</h2>
+
+      <div class="space-y-4">
+        <div onclick="selectMetode('ATM Debit')" class="border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-100" id="optionATM">
+          <img src="https://img.icons8.com/ios-filled/50/000000/bank-card-back-side.png" class="w-8" />
+          <span>ATM Debit</span>
+        </div>
+        <div onclick="selectMetode('Cash')" class="border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-gray-100" id="optionCash">
+          <img src="https://img.icons8.com/ios-filled/50/000000/cash-in-hand.png" class="w-8" />
+          <span>Cash</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tombol Konfirmasi -->
+  <div class="fixed bottom-6 right-6">
+    <button onclick="selesaikanPembayaran()" class="bg-[#1f4e85] text-white px-6 py-3 rounded-full shadow-md hover:bg-[#163a60]">
+      Pesanan Selesai Dibayar
+    </button>
+  </div>
+
+  <!-- Script -->
+  <script>
+    let metodePembayaran = "";
+
+    function selectMetode(metode) {
+      metodePembayaran = metode;
+      document.getElementById("optionATM").classList.remove("bg-gray-200");
+      document.getElementById("optionCash").classList.remove("bg-gray-200");
+
+      if (metode === "ATM Debit") {
+        document.getElementById("optionATM").classList.add("bg-gray-200");
+      } else {
+        document.getElementById("optionCash").classList.add("bg-gray-200");
+      }
+    }
+
+    function selesaikanPembayaran() {
+  if (!metodePembayaran) {
+    alert("Silakan pilih metode pembayaran terlebih dahulu.");
+    return;
+  }
+
+  const nomorMeja = localStorage.getItem("meja_dipilih");
+
+  fetch("php/updatePayment.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      meja: parseInt(nomorMeja),
+      metode: metodePembayaran
+    })
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.success) {
+      alert("Pembayaran berhasil: " + metodePembayaran);
+
+      // Bersihkan data localStorage
+      let daftarPesanan = JSON.parse(localStorage.getItem("rms_daftar_pesanan") || "[]");
+      daftarPesanan = daftarPesanan.filter(p => p.meja != nomorMeja);
+      localStorage.setItem("rms_daftar_pesanan", JSON.stringify(daftarPesanan));
+      localStorage.removeItem("meja_dipilih");
+
+      window.location.href = "selesai.html"; // atau halaman lain
+    } else {
+      alert("Gagal menyimpan pembayaran.");
+    }
+  });
+}
+
+
+    // Load data dari localStorage saat halaman dimuat
+    document.addEventListener("DOMContentLoaded", () => {
+      const nomorMeja = localStorage.getItem("meja_dipilih");
+      const daftarPesanan = JSON.parse(localStorage.getItem("rms_daftar_pesanan") || "[]");
+
+      const dataMeja = daftarPesanan.find(p => p.meja == nomorMeja);
+      if (!dataMeja) {
+        alert("Data meja tidak ditemukan.");
+        return;
+      }
+
+      document.getElementById("infoMeja").innerText = "No Meja : " + dataMeja.meja;
+      document.getElementById("namaPelanggan").innerText = "Nama : " + dataMeja.nama;
+
+      const list = document.getElementById("daftarMenu");
+      dataMeja.pesanan.forEach(menu => {
+        const li = document.createElement("li");
+        li.textContent = menu;
+        list.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

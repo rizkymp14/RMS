@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Laporan Keuangan</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js -->
+</head>
+<body class="bg-white font-sans min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-[#1f4e85] text-white px-6 py-4 relative flex items-center justify-center">
+    <div class="absolute left-6 w-6 h-6 text-xl">&nbsp;</div>
+    <img src="assets/img/logo.jpg" alt="Logo" class="h-10" />
+    <div class="absolute right-6 w-8 h-8 bg-black rounded-full"></div>
+  </header>
+
+  <main class="p-6">
+    <h2 class="text-2xl font-bold text-center mb-6">DASHBOARD LAPORAN KEUANGAN</h2>
+
+    <!-- Tombol Tab -->
+    <div class="flex justify-center gap-4 mb-6">
+      <button id="btnHarian" onclick="tampilkanLaporan('harian')" class="px-6 py-2 border-2 border-[#1f4e85] text-[#1f4e85] rounded-xl font-medium bg-white">Harian</button>
+      <button id="btnMingguan" onclick="tampilkanLaporan('mingguan')" class="px-6 py-2 text-[#1f4e85] bg-gray-100 rounded-xl font-medium">Mingguan</button>
+      <button id="btnBulanan" onclick="tampilkanLaporan('bulanan')" class="px-6 py-2 text-[#1f4e85] bg-gray-100 rounded-xl font-medium">Bulanan</button>
+      <button id="btnTahunan" onclick="tampilkanLaporan('tahunan')" class="px-6 py-2 text-[#1f4e85] bg-gray-100 rounded-xl font-medium">Tahunan</button>
+    </div>
+
+    <h3 class="text-xl font-semibold mb-4" id="judulLaporan">Laporan Harian</h3>
+
+    <!-- Grafik -->
+    <div class="mb-8">
+      <canvas id="laporanChart" height="100"></canvas>
+    </div>
+
+    <!-- Tabel Laporan -->
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-center border border-gray-200">
+        <thead class="bg-gray-100">
+          <tr>
+            <th class="py-3 px-4 border-b border-gray-300">Tanggal</th>
+            <th class="py-3 px-4 border-b border-gray-300">Jumlah Transaksi</th>
+            <th class="py-3 px-4 border-b border-gray-300">Pendapatan</th>
+            <th class="py-3 px-4 border-b border-gray-300">Edit</th>
+          </tr>
+        </thead>
+        <tbody id="laporanBody">
+          <!-- Data akan diisi oleh JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tombol Tambah -->
+    <div class="mt-6 text-right">
+      <button onclick="bukaPopupTambah()" class="bg-[#1f4e85] hover:bg-[#183a62] text-white px-6 py-2 rounded-full font-semibold">
+        + TAMBAH
+      </button>
+    </div>
+  </main>
+
+  <!-- Popup Modal -->
+  <div id="popupModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[90%] max-w-md text-center shadow-xl">
+      <h2 class="text-xl font-semibold mb-4" id="popupTitle">Tambah Laporan</h2>
+      <input id="inputTanggal" type="text" placeholder="Tanggal (dd - mm - yyyy)" class="w-full mb-2 px-4 py-2 border rounded-lg" />
+      <input id="inputTransaksi" type="number" placeholder="Jumlah Transaksi" class="w-full mb-2 px-4 py-2 border rounded-lg" />
+      <input id="inputPendapatan" type="text" placeholder="Pendapatan (contoh: Rp. 5 000 000)" class="w-full mb-4 px-4 py-2 border rounded-lg" />
+      <div class="flex justify-center gap-4">
+        <button onclick="simpanLaporan()" class="bg-[#1f4e85] text-white px-4 py-2 rounded-full">Simpan</button>
+        <button onclick="tutupPopup()" class="bg-gray-400 text-white px-4 py-2 rounded-full">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    const dataLaporan = {
+      harian: [],
+      mingguan: [],
+      bulanan: [],
+      tahunan: []
+    };
+
+    let currentJenis = 'harian';
+    let editMode = false;
+    let rowBeingEdited = null;
+    let chartInstance = null;
+
+    async function tampilkanLaporan(jenis) {
+      currentJenis = jenis;
+      document.getElementById('judulLaporan').innerText = `Laporan ${jenis.charAt(0).toUpperCase() + jenis.slice(1)}`;
+
+      ['harian', 'mingguan', 'bulanan', 'tahunan'].forEach(j => {
+        const btn = document.getElementById(`btn${j.charAt(0).toUpperCase() + j.slice(1)}`);
+        btn.classList.toggle('bg-white', j === jenis);
+        btn.classList.toggle('border-2', j === jenis);
+        btn.classList.toggle('bg-gray-100', j !== jenis);
+      });
+
+      try {
+        const res = await fetch(`php/getReports.php?jenis=${jenis}`);
+        const json = await res.json();
+        if (json.success) {
+          dataLaporan[jenis] = json.data;
+          renderTabel(jenis);
+          renderChart(jenis);
+        } else {
+          alert("Gagal memuat data laporan.");
+        }
+      } catch (error) {
+        alert("Terjadi kesalahan saat memuat data.");
+      }
+    }
+
+    function renderTabel(jenis) {
+      const tbody = document.getElementById('laporanBody');
+      tbody.innerHTML = '';
+      dataLaporan[jenis].forEach(row => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="py-3 px-4 border-b border-gray-200">${row.tanggal}</td>
+          <td class="py-3 px-4 border-b border-gray-200">${row.transaksi}</td>
+          <td class="py-3 px-4 border-b border-gray-200">${row.pendapatan}</td>
+          <td class="py-3 px-4 border-b border-gray-200">
+            <button onclick="bukaPopupEdit('${row.tanggal}', ${row.transaksi}, '${row.pendapatan}', this)">
+              ✎
+            </button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderChart(jenis) {
+      const ctx = document.getElementById('laporanChart').getContext('2d');
+      const labels = dataLaporan[jenis].map(item => item.tanggal);
+      const data = dataLaporan[jenis].map(item => parseInt(item.pendapatan.replace(/[^\d]/g, '')) || 0);
+
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Pendapatan',
+            data: data,
+            backgroundColor: '#1f4e85'
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: context => "Rp. " + context.raw.toLocaleString()
+              }
+            }
+          },
+          scales: {
+            y: {
+              ticks: {
+                callback: value => 'Rp. ' + value.toLocaleString()
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function bukaPopupTambah() {
+      document.getElementById('popupModal').classList.remove('hidden');
+      document.getElementById('popupTitle').innerText = 'Tambah Laporan';
+      document.getElementById('inputTanggal').value = '';
+      document.getElementById('inputTransaksi').value = '';
+      document.getElementById('inputPendapatan').value = '';
+      editMode = false;
+    }
+
+    function bukaPopupEdit(tanggal, transaksi, pendapatan, btn) {
+      document.getElementById('popupModal').classList.remove('hidden');
+      document.getElementById('popupTitle').innerText = 'Edit Laporan';
+      document.getElementById('inputTanggal').value = tanggal;
+      document.getElementById('inputTransaksi').value = transaksi;
+      document.getElementById('inputPendapatan').value = pendapatan;
+      editMode = true;
+      rowBeingEdited = btn.closest('tr');
+    }
+
+    function tutupPopup() {
+      document.getElementById('popupModal').classList.add('hidden');
+    }
+
+    function simpanLaporan() {
+      const tanggal = document.getElementById('inputTanggal').value;
+      const transaksi = document.getElementById('inputTransaksi').value;
+      const pendapatan = document.getElementById('inputPendapatan').value;
+
+      if (!tanggal || !transaksi || !pendapatan) {
+        alert('Semua kolom harus diisi!');
+        return;
+      }
+
+      if (editMode && rowBeingEdited) {
+        rowBeingEdited.innerHTML = `
+          <td class="py-3 px-4 border-b border-gray-200">${tanggal}</td>
+          <td class="py-3 px-4 border-b border-gray-200">${transaksi}</td>
+          <td class="py-3 px-4 border-b border-gray-200">${pendapatan}</td>
+          <td class="py-3 px-4 border-b border-gray-200">
+            <button onclick="bukaPopupEdit('${tanggal}', ${transaksi}, '${pendapatan}', this)">✎</button>
+          </td>
+        `;
+      } else {
+        dataLaporan[currentJenis].push({ tanggal, transaksi, pendapatan });
+      }
+
+      renderTabel(currentJenis);
+      renderChart(currentJenis);
+      tutupPopup();
+    }
+
+    // Jalankan laporan harian saat pertama kali
+    tampilkanLaporan('harian');
+  </script>
+
+</body>
+</html>

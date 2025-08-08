@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Menu Pelanggan - RMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="bg-white p-4 flex justify-between items-center shadow-md">
+  <a href="index.html">
+    <img src="assets/img/logo.jpg" alt="Logo RMS" class="h-10 w-auto">
+  </a>
+  <div class="flex items-center gap-4">
+    <a href="login.html" title="Login / Profil">
+      <span class="text-2xl">👤</span>
+    </a>
+  </div>
+</header>
+
+
+  <!-- Navbar kategori -->
+  <div class="bg-white p-4 shadow flex justify-around mt-2">
+    <button onclick="showMenu('Paket')">PAKET</button>
+    <button onclick="showMenu('Main Menu')">MAIN MENU</button>
+    <button onclick="showMenu('Seafood')">SEAFOOD</button>
+    <button onclick="showMenu('Minuman')">MINUMAN</button>
+    <button onclick="showMenu('Dessert')">DESSERT</button>
+  </div>
+
+  <!-- Tombol keranjang mengambang -->
+  <div id="floatingCartBtn"
+       class="fixed top-[100px] right-4 bg-white rounded-full shadow p-3 text-xl z-40 hover:bg-gray-100 cursor-pointer">
+    🛒 <span id="floatingCartCount" class="text-sm font-bold text-red-500">(0)</span>
+  </div>
+
+  <!-- Konten menu -->
+  <div class="p-4">
+    <h2 id="judulKategori" class="text-2xl font-bold mb-4">PAKET MENU</h2>
+    <div id="menuContainer" class="grid sm:grid-cols-2 md:grid-cols-3 gap-6"></div>
+  </div>
+
+  <!-- Modal rincian menu -->
+  <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-end z-50">
+  <div class="bg-white p-6 rounded-l-lg w-full max-w-sm h-full overflow-y-auto relative">
+    <button onclick="closeModal()" class="absolute top-2 right-4 text-2xl">✕</button>
+    <h2 class="text-xl font-bold mb-2" id="modal-judul">RINCIAN MENU</h2>
+    <img id="modal-img" class="w-full h-40 object-cover mb-3 rounded" />
+    <p id="modal-deskripsi" class="text-center text-gray-700 mb-2"></p>
+    <p id="modal-harga" class="text-center font-bold text-lg mb-3"></p>
+    <textarea id="modal-catatan" placeholder="Catatan :" class="w-full border p-2 rounded mb-4"></textarea>
+    <div class="flex justify-center items-center space-x-6">
+      <button onclick="decreaseQty()" class="text-2xl bg-gray-200 px-3 py-1 rounded">-</button>
+      <span id="modal-qty" class="text-lg font-semibold">1</span>
+      <button onclick="increaseQty()" class="text-2xl bg-gray-200 px-3 py-1 rounded">+</button>
+    </div>
+    <button onclick="addToCart()" class="w-full mt-4 bg-green-600 hover:bg-green-700 text-white py-2 rounded">
+      Tambahkan ke Keranjang
+    </button>
+  </div>
+</div>
+
+<!-- Checkout bar -->
+<div id="checkoutBar" class="fixed bottom-0 left-0 w-full bg-white px-6 py-4 shadow-inner flex justify-end items-center gap-4 hidden z-40">
+  <div class="text-right">
+    <p class="text-sm text-gray-600">TOTAL</p>
+    <p id="checkoutTotal" class="text-xl font-bold">Rp. 0</p>
+  </div>
+  <button onclick="goToCheckout()" class="bg-red-500 hover:bg-red-600 text-black font-bold py-3 px-6 rounded-full flex items-center gap-2">
+    🛍 <span>Checkout</span> <span id="checkoutItems">0 item(s)</span>
+  </button>
+</div>
+
+
+
+
+  <!-- Script -->
+  <script>
+    let cart = [];
+    let currentMenu = null;
+
+    function showMenu(kategori) {
+      document.getElementById("judulKategori").innerText = kategori.toUpperCase() + " MENU";
+      const container = document.getElementById("menuContainer");
+      container.innerHTML = "<p class='text-center col-span-3 text-gray-500'>Memuat menu...</p>";
+
+      fetch("../php/getMenus.php?kategori=" + encodeURIComponent(kategori))
+        .then(res => res.json())
+        .then(data => {
+          container.innerHTML = "";
+          if (data.success && data.data.length > 0) {
+            data.data.forEach(menu => {
+              const item = document.createElement("div");
+              item.className = "bg-white rounded shadow p-3 cursor-pointer hover:shadow-lg";
+              item.innerHTML = `
+                <img src="assets/img/${menu.gambar || 'default.jpg'}" class="w-full h-40 object-cover mb-2 rounded">
+                <h3 class="font-bold">${menu.nama}</h3>
+                <p class="text-gray-700">Rp. ${Number(menu.harga).toLocaleString()}</p>
+              `;
+              item.onclick = () => openModal(menu);
+              container.appendChild(item);
+            });
+          } else {
+            container.innerHTML = "<p class='text-center col-span-3 text-gray-500'>Tidak ada menu ditemukan.</p>";
+          }
+        })
+        .catch(err => {
+          console.error("Gagal mengambil menu:", err);
+          container.innerHTML = "<p class='text-center col-span-3 text-red-500'>Gagal mengambil menu.</p>";
+        });
+    }
+
+    function openModal(menu) {
+      currentMenu = menu;
+      document.getElementById("modal-img").src = `assets/img/${menu.gambar || 'default.jpg'}`;
+      document.getElementById("modal-judul").innerText = menu.nama;
+      document.getElementById("modal-deskripsi").innerText = menu.deskripsi;
+      document.getElementById("modal-harga").innerText = "Rp. " + Number(menu.harga).toLocaleString();
+      document.getElementById("modal-catatan").value = '';
+      document.getElementById("modal-qty").innerText = 1;
+      document.getElementById("modal").classList.remove("hidden");
+      document.getElementById("modal").classList.add("flex");
+    }
+
+    function closeModal() {
+      document.getElementById("modal").classList.remove("flex");
+      document.getElementById("modal").classList.add("hidden");
+    }
+
+    function increaseQty() {
+      let qty = parseInt(document.getElementById("modal-qty").innerText);
+      document.getElementById("modal-qty").innerText = qty + 1;
+    }
+
+    function decreaseQty() {
+      let qty = parseInt(document.getElementById("modal-qty").innerText);
+      if (qty > 1) document.getElementById("modal-qty").innerText = qty - 1;
+    }
+
+    function addToCart() {
+      const qty = parseInt(document.getElementById("modal-qty").innerText);
+      const catatan = document.getElementById("modal-catatan").value;
+      const item = {
+        kode: currentMenu.kode,
+        nama: currentMenu.nama,
+        harga: currentMenu.harga,
+        qty,
+        catatan
+      };
+      cart.push(item);
+      updateCheckoutBar();
+      updateFloatingCartCount();
+      closeModal();
+    }
+
+    function updateCheckoutBar() {
+      const total = cart.reduce((sum, item) => sum + (item.harga * item.qty), 0);
+      const items = cart.reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById("checkoutTotal").innerText = "Rp. " + total.toLocaleString();
+      document.getElementById("checkoutItems").innerText = `${items} item(s)`;
+      document.getElementById("checkoutBar").classList.remove("hidden");
+    }
+
+    function updateFloatingCartCount() {
+      const count = cart.reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById("floatingCartCount").innerText = `(${count})`;
+    }
+
+    function goToCheckout() {
+      localStorage.setItem("rms_cart", JSON.stringify(cart));
+      window.location.href = "order-list.html";
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      showMenu("Paket");
+    });
+
+    
+    document.getElementById("floatingCartBtn").addEventListener("click", () => {
+      if (cart.length === 0) {
+        alert("Keranjang kosong.");
+      } else {
+        alert("Isi keranjang:\n" + cart.map(i => `${i.nama} x${i.qty}`).join("\n"));
+      }
+    });
+  </script>
+</body>
+</html>

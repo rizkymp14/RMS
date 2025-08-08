@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stok Barang dan Menu</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-white min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-[#1f4e85] text-white px-6 py-4 relative flex items-center justify-center">
+    <div class="absolute left-6 w-6 h-6 text-xl">&nbsp;</div>
+    <img src="assets/img/logo.jpg" alt="Logo" class="h-10" />
+    
+    <button 
+      onclick="logout()" 
+      class="absolute right-6 bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-1 rounded-lg"
+    >
+      Logout
+    </button>
+  </header>
+
+
+  <main class="p-6">
+    <h2 class="text-2xl font-bold text-center mb-6 text-[#1f4e85]">STOCK BARANG DAN MENU</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Bahan -->
+      <div class="border rounded-xl p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold text-[#1f4e85]">Nama Nama Bahan</h3>
+          <button onclick="bukaPopupBahan()" class="bg-[#1f4e85] text-white px-4 py-1 rounded-full text-sm">+ TAMBAH</button>
+        </div>
+        <input type="text" placeholder="Cari Bahan . . ." class="w-full px-4 py-2 mb-4 border rounded-full" />
+        <table class="w-full text-sm text-left border">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="py-2 px-4">Nama Bahan</th>
+              <th class="py-2 px-4">Satuan</th>
+              <th class="py-2 px-4">Qty</th>
+              <th class="py-2 px-4">Edit</th>
+            </tr>
+          </thead>
+          <tbody id="tabelBahan">
+            <tr>
+              <td class="px-4 py-2">Tepung Terigu</td>
+              <td class="px-4 py-2">Kg</td>
+              <td class="px-4 py-2">10</td>
+              <td class="px-4 py-2">
+                <button onclick="editBahan('Tepung Terigu', 'Kg', 10)">
+                  ✎
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Menu -->
+      <div class="border rounded-xl p-4">
+        <div class="flex justify-between items-center mb-4">
+          <h3 class="text-xl font-semibold text-[#1f4e85]">Menu Pelanggan</h3>
+          <button onclick="bukaPopupMenu()" class="bg-[#1f4e85] text-white px-4 py-1 rounded-full text-sm">+ TAMBAH</button>
+        </div>
+        <input type="text" placeholder="Cari Menu . . ." class="w-full px-4 py-2 mb-4 border rounded-full" />
+        <table class="w-full text-sm text-left border">
+          <thead class="bg-gray-100">
+            <tr>
+              <th class="py-2 px-4">Nama Menu</th>
+              <th class="py-2 px-4">Qty</th>
+              <th class="py-2 px-4">Edit</th>
+            </tr>
+          </thead>
+          <tbody id="tabelMenu">
+            <tr>
+              <td class="px-4 py-2">Teh Manis</td>
+              <td class="px-4 py-2">10</td>
+              <td class="px-4 py-2">
+                <button onclick="editMenu('Teh Manis', 10)">✎</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Popup Bahan -->
+  <div id="popupBahan" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[90%] max-w-md text-center">
+      <h2 class="text-xl font-semibold mb-4" id="judulPopupBahan">Tambah Bahan</h2>
+      <input id="inputNamaBahan" type="text" placeholder="Nama Bahan" class="w-full mb-2 px-4 py-2 border rounded-lg" />
+      <input id="inputSatuanBahan" type="text" placeholder="Satuan" class="w-full mb-2 px-4 py-2 border rounded-lg" />
+      <input id="inputQtyBahan" type="number" placeholder="QTY" class="w-full mb-4 px-4 py-2 border rounded-lg" />
+      <div class="flex justify-center gap-4">
+        <button onclick="simpanBahan()" class="bg-[#1f4e85] text-white px-4 py-2 rounded-full">Simpan</button>
+        <button onclick="tutupPopupBahan()" class="bg-gray-400 text-white px-4 py-2 rounded-full">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Menu -->
+  <div id="popupMenu" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[90%] max-w-md text-center">
+      <h2 class="text-xl font-semibold mb-4" id="judulPopupMenu">Tambah Menu</h2>
+      <input id="inputNamaMenu" type="text" placeholder="Nama Menu" class="w-full mb-2 px-4 py-2 border rounded-lg" />
+      <input id="inputQtyMenu" type="number" placeholder="QTY" class="w-full mb-4 px-4 py-2 border rounded-lg" />
+      <div class="flex justify-center gap-4">
+        <button onclick="simpanMenu()" class="bg-[#1f4e85] text-white px-4 py-2 rounded-full">Simpan</button>
+        <button onclick="tutupPopupMenu()" class="bg-gray-400 text-white px-4 py-2 rounded-full">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP ERROR -->
+<div id="popupError" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+  <div class="bg-white p-6 rounded-xl text-center shadow-xl w-[90%] max-w-sm">
+    <h3 class="text-xl font-semibold mb-4 text-black">This Page Says</h3>
+    <p class="text-red-600 font-semibold text-lg mb-6" id="pesanError">Nama Menu Tidak Terdaftar !!</p>
+    <button onclick="tutupError()" class="bg-[#1f4e85] hover:bg-[#183a62] text-white px-6 py-2 rounded-full">OK</button>
+  </div>
+</div>
+
+
+  <script>
+    // === BAHAN ===
+    function bukaPopupBahan() {
+      document.getElementById("judulPopupBahan").innerText = "Tambah Bahan";
+      document.getElementById("inputNamaBahan").value = "";
+      document.getElementById("inputSatuanBahan").value = "";
+      document.getElementById("inputQtyBahan").value = "";
+      document.getElementById("popupBahan").classList.remove("hidden");
+    }
+
+    function tutupPopupBahan() {
+      document.getElementById("popupBahan").classList.add("hidden");
+    }
+
+  //   function simpanBahan() {
+  // const nama = document.getElementById("inputNamaBahan").value;
+  // const satuan = document.getElementById("inputSatuanBahan").value;
+  // const qty = document.getElementById("inputQtyBahan").value;
+
+  // if (!nama || !satuan || !qty) return alert("Lengkapi semua kolom!");
+
+  // fetch("php/simpanStok.php", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ jenis: "bahan", nama, satuan, qty })
+  // }).then(res => res.json()).then(response => {
+  //   if (response.success) {
+  //     location.reload();
+  //   } else {
+  //     alert("Gagal menyimpan");
+  //   }
+
+  // function simpanBahan() {
+  // const nama = document.getElementById("inputNamaBahan").value.trim();
+  // const satuan = document.getElementById("inputSatuanBahan").value.trim();
+  // const qty = parseInt(document.getElementById("inputQtyBahan").value.trim());
+
+  // if (!nama || !satuan || isNaN(qty) || qty <= 0) {
+  //   alert("Silahkan isi terlebih dahulu!");
+  //   return;
+  // }
+
+  // fetch("php/simpanstok.php", {
+  //   method: "POST",
+  //   headers: { "Content-Type": "application/json" },
+  //   body: JSON.stringify({ jenis: "bahan", nama, satuan, qty })
+  // })
+  // .then(res => res.json())
+  // .then(response => {
+  //   console.log("RESPON BAHAN:", response);  // untuk debug
+  //   if (response.success) {
+  //     location.reload();
+  //   } else {
+  //     alert("Gagal menyimpan bahan: " + (response.message || "Tidak diketahui"));
+  //   }
+
+    function simpanBahan() {
+      const nama = document.getElementById("inputNamaBahan").value.trim();
+      const satuan = document.getElementById("inputSatuanBahan").value.trim();
+      const qty = parseInt(document.getElementById("inputQtyBahan").value.trim());
+      
+      if (!nama || !satuan || isNaN(qty) || qty <= 0) {
+        alert("Lengkapi semua kolom dengan benar!");
+        return;
+      }
+
+      fetch("../php/simpanStok.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jenis: "bahan", nama, satuan, qty })
+      })
+      .then(res => res.json())
+      .then(response => {
+        console.log("RESPON:", response);
+        alert(JSON.stringify(response));
+        if (response.success) {
+          location.reload();
+        } else {
+          alert("Gagal menyimpan bahan: " + (response.message || "Tidak diketahui"));
+        }
+      })
+      .catch(err => {
+        console.error("FETCH ERROR:", err);
+        alert("Terjadi kesalahan koneksi.")
+      });
+    }
+
+    function editBahan(nama, satuan, qty) {
+      bukaPopupBahan();
+      document.getElementById("judulPopupBahan").innerText = "Edit Bahan";
+      document.getElementById("inputNamaBahan").value = nama;
+      document.getElementById("inputSatuanBahan").value = satuan;
+      document.getElementById("inputQtyBahan").value = qty;
+    }
+
+    // === MENU ===
+    function bukaPopupMenu() {
+      document.getElementById("judulPopupMenu").innerText = "Tambah Menu";
+      document.getElementById("inputNamaMenu").value = "";
+      document.getElementById("inputQtyMenu").value = "";
+      document.getElementById("popupMenu").classList.remove("hidden");
+    }
+
+    function tutupPopupMenu() {
+      document.getElementById("popupMenu").classList.add("hidden");
+    }
+
+    function simpanMenu() {
+  const nama = document.getElementById("inputNamaMenu").value;
+  const qty = document.getElementById("inputQtyMenu").value;
+
+  if (!nama || !qty) return alert("Lengkapi semua kolom!");
+
+  fetch("php/simpanStok.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ jenis: "menu", nama, qty })
+  }).then(res => res.json()).then(response => {
+    if (response.success) {
+      location.reload();
+    } else {
+      alert("Gagal menyimpan");
+    }
+  });
+}
+
+    function editMenu(nama, qty) {
+      bukaPopupMenu();
+      document.getElementById("judulPopupMenu").innerText = "Edit Menu";
+      document.getElementById("inputNamaMenu").value = nama;
+      document.getElementById("inputQtyMenu").value = qty;
+    }
+
+    function tampilkanError(pesan) {
+  document.getElementById("pesanError").innerText = pesan;
+  document.getElementById("popupError").classList.remove("hidden");
+}
+
+function tutupError() {
+  document.getElementById("popupError").classList.add("hidden");
+}
+
+function loadDataBahan() {
+  fetch("../php/getStok.php")
+    .then(res => res.json())
+    .then(response => {
+      if (!response.success) throw new Error(response.message);
+      
+      const tbody = document.getElementById("tabelBahan");
+      tbody.innerHTML = ""; // Kosongkan tabel lama
+
+      response.data.forEach(item => {
+        const row = `
+          <tr>
+            <td class="px-4 py-2">${item.nama}</td>
+            <td class="px-4 py-2">${item.satuan}</td>
+            <td class="px-4 py-2">${item.qty}</td>
+            <td class="px-4 py-2">
+              <button onclick="editBahan('${item.nama}', '${item.satuan}', ${item.qty})">
+                ✎
+              </button>
+            </td>
+          </tr>
+        `;
+        tbody.insertAdjacentHTML("beforeend", row);
+      });
+    })
+    .catch(err => {
+      console.error("Gagal memuat data bahan:", err);
+      alert("Gagal memuat data bahan!");
+    });
+}
+
+// Jalankan saat halaman dimuat
+document.addEventListener("DOMContentLoaded", loadDataBahan);
+
+function editBahan(nama, satuan, qty) {
+  console.log("Edit Bahan:", nama, satuan, qty);
+  document.getElementById("inputNama").value = nama;
+  document.getElementById("inputSatuan").value = satuan;
+  document.getElementById("inputQty").value = qty;
+}
+
+  function logout() {
+    if (confirm("Yakin ingin logout?")) {
+      // Redirect ke halaman login atau hapus session (disesuaikan)
+      window.location.href = "login.html"; // atau ganti sesuai sistemmu
+    }
+  }
+
+// document.addEventListener("DOMContentLoaded", () => {
+//   fetch("php/getStok.php")
+//     .then(res => res.json())
+//     .then(data => {
+//       if (data.success) {
+//         const bahanTbody = document.getElementById("tabelBahan");
+//         const menuTbody = document.getElementById("tabelMenu");
+
+//         bahanTbody.innerHTML = "";
+//         data.bahan.forEach(b => {
+//           const tr = document.createElement("tr");
+//           tr.innerHTML = `
+//             <td class="px-4 py-2">${b.nama}</td>
+//             <td class="px-4 py-2">${b.satuan}</td>
+//             <td class="px-4 py-2">${b.qty}</td>
+//             <td class="px-4 py-2">
+//               <button onclick="editBahan('${b.nama}', '${b.satuan}', ${b.qty})">✎</button>
+//             </td>`;
+//           bahanTbody.appendChild(tr);
+//         });
+
+//         menuTbody.innerHTML = "";
+//         data.menu.forEach(m => {
+//           const tr = document.createElement("tr");
+//           tr.innerHTML = `
+//             <td class="px-4 py-2">${m.nama}</td>
+//             <td class="px-4 py-2">${m.qty}</td>
+//             <td class="px-4 py-2">
+//               <button onclick="editMenu('${m.nama}', ${m.qty})">✎</button>
+//             </td>`;
+//           menuTbody.appendChild(tr);
+//         });
+//       }
+//     });
+// });
+
+  </script>
+</body>
+</html>

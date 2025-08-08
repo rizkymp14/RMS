@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pelayanan - RMS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Header -->
+  <header class="bg-white p-4 shadow flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <img src="assets/img/logo.jpg" alt="Logo RMS" class="h-10 w-auto">
+      <button class="font-bold text-lg border-b-4 border-black">Pelayanan</button>
+      <button onclick="goToPesanan()" class="font-semibold text-lg text-gray-600">Pesanan</button>
+    </div>
+    <div class="text-2xl">👤</div>
+  </header>
+
+  <!-- Konten Grid -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+
+    <!-- Bagian Meja -->
+    <div class="bg-white p-4 rounded-xl shadow">
+      <div class="flex justify-between items-center mb-3">
+        <h2 class="text-xl font-bold">MEJA</h2>
+      </div>
+      <div id="mejaContainer" class="grid grid-cols-2 gap-3">
+        <!-- Meja via JS -->
+      </div>
+    </div>
+
+    <!-- Antrian -->
+    <div class="bg-white p-4 rounded-xl shadow flex flex-col justify-between">
+      <div>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">ANTRIAN</h2>
+          <button onclick="showPopupAntrian()" class="bg-blue-500 text-white px-3 py-1 rounded-full text-sm">+ Antrian</button>
+        </div>
+        <ul id="antrianList" class="space-y-2"></ul>
+      </div>
+      <div id="totalAntrian" class="text-center font-bold mt-6">Total Antrian: 0 orang</div>
+    </div>
+
+    <!-- Daftar Pelanggan -->
+    <div class="bg-white p-4 rounded-xl shadow overflow-y-auto ">
+      <h2 class="text-xl font-bold mb-4">DAFTAR PELANGGAN</h2>
+      <div id="daftarPelanggan" class="space-y-3">
+        <!-- Via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Konfirmasi Ubah Status Meja -->
+  <div id="popupKonfirmasi" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[90%] max-w-sm text-center shadow-xl">
+      <h2 class="text-lg font-semibold mb-4">Ubah Status Meja</h2>
+      <p class="mb-6 text-gray-700">Apakah Anda yakin ingin mengubah status meja ini?</p>
+      <div class="flex justify-center gap-4">
+        <button onclick="konfirmasiUbahStatus()" class="bg-green-500 text-white px-4 py-2 rounded-full">Ya</button>
+        <button onclick="tutupPopup()" class="bg-red-500 text-white px-4 py-2 rounded-full">Tidak</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup Tambah Antrian -->
+  <div id="popupAntrian" class="fixed inset-0 bg-black bg-opacity-40 hidden z-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-xl w-[90%] max-w-sm text-center shadow-lg">
+      <h2 class="text-lg font-semibold mb-3">Tambah Antrian</h2>
+      <div class="mb-4 text-left space-y-3">
+        <div>
+          <label for="namaPelanggan" class="block text-sm font-medium">Nama Pelanggan</label>
+          <input type="text" id="namaPelanggan" class="w-full border border-gray-300 rounded px-3 py-2 mt-1" placeholder="Contoh: Andi" />
+        </div>
+        <div>
+          <label for="jumlahOrang" class="block text-sm font-medium">Jumlah Orang</label>
+          <input type="number" id="jumlahOrang" min="1" class="w-full border border-gray-300 rounded px-3 py-2 mt-1" placeholder="Contoh: 2" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button onclick="hidePopupAntrian()" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-full text-sm">Batal</button>
+        <button onclick="addAntrian()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-full text-sm">Tambahkan</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+let mejaData = [
+  { nomor: 1, kapasitas: 4, status: "kosong" },
+  { nomor: 2, kapasitas: 6, status: "terisi" },
+  { nomor: 3, kapasitas: 4, status: "kosong" },
+  { nomor: 4, kapasitas: 2, status: "kosong" },
+  { nomor: 5, kapasitas: 4, status: "terisi" },
+  { nomor: 6, kapasitas: 4, status: "kosong" },
+  { nomor: 7, kapasitas: 6, status: "kosong" },
+  { nomor: 8, kapasitas: 2, status: "terisi" },
+  { nomor: 9, kapasitas: 6, status: "terisi" },
+  { nomor: 10, kapasitas: 6, status: "terisi" },
+  { nomor: 11, kapasitas: 6, status: "terisi" },
+  { nomor: 12, kapasitas: 6, status: "terisi" }
+];
+
+let antrian = [];
+let daftarPelanggan = [];
+let mejaTerpilih = null;
+
+function renderMeja() {
+  const container = document.getElementById("mejaContainer");
+  container.innerHTML = "";
+  mejaData.forEach(meja => {
+    const div = document.createElement("div");
+    div.className = `p-4 rounded text-center font-bold cursor-pointer transition ${
+      meja.status === "kosong" ? "bg-green-300 hover:bg-green-400" : "bg-red-200 hover:bg-red-300"
+    }`;
+    div.innerHTML = `${meja.nomor} <br><span class="text-sm font-normal">Kapasitas: ${meja.kapasitas}</span>`;
+    div.onclick = () => showPopupKonfirmasi(meja.nomor);
+    container.appendChild(div);
+  });
+}
+
+function showPopupKonfirmasi(nomorMeja) {
+  mejaTerpilih = nomorMeja;
+  document.getElementById("popupKonfirmasi").classList.remove("hidden");
+}
+
+function tutupPopup() {
+  document.getElementById("popupKonfirmasi").classList.add("hidden");
+  mejaTerpilih = null;
+}
+
+function konfirmasiUbahStatus() {
+  const meja = mejaData.find(m => m.nomor === mejaTerpilih);
+  if (!meja) return;
+
+  if (meja.status === "kosong") {
+    if (antrian.length === 0) {
+      alert("Tidak ada antrian.");
+      tutupPopup();
+      return;
+    }
+    const pelangganBaru = antrian.shift();
+    daftarPelanggan.push({
+      meja: meja.nomor,
+      nama: pelangganBaru.nama,
+      pesanan: ["Kangkung", "Nasi Ayam Bakar x1", "Es Teh"]
+    });
+    meja.status = "terisi";
+  } else {
+    meja.status = "kosong";
+    daftarPelanggan = daftarPelanggan.filter(p => p.meja !== meja.nomor);
+  }
+
+  tutupPopup();
+  renderMeja();
+  renderAntrian();
+  renderDaftarPelanggan();
+}
+
+function renderAntrian() {
+  const ul = document.getElementById("antrianList");
+  ul.innerHTML = "";
+  antrian.forEach((item, i) => {
+    const li = document.createElement("li");
+    li.className = "bg-gray-200 px-3 py-2 rounded";
+    li.innerText = `${i + 1}. ${item.nama} (${item.jumlah} orang - ${item.waktu})`;
+    ul.appendChild(li);
+  });
+  document.getElementById("totalAntrian").innerText = "Total Antrian: " + antrian.length + " orang";
+}
+
+function renderDaftarPelanggan() {
+  const wrapper = document.getElementById("daftarPelanggan");
+  wrapper.innerHTML = "";
+  daftarPelanggan.forEach((p, index) => {
+    const div = document.createElement("div");
+    div.className = "bg-gray-100 p-3 rounded";
+    div.innerHTML = `
+      <p><strong>Meja ${p.meja}</strong></p>
+      <p>${p.nama}</p>
+      <p>Pesanan:</p>
+      <ul class="list-disc list-inside ml-3">
+        ${p.pesanan.map(item => `<li><strong>${item}</strong></li>`).join("")}
+      </ul>
+      <button onclick="hapusPelanggan(${index})" class="mt-2 bg-red-500 text-white text-sm px-3 py-1 rounded-full">Hapus</button>
+    `;
+    wrapper.appendChild(div);
+  });
+}
+
+function showPopupAntrian() {
+  document.getElementById("popupAntrian").classList.remove("hidden");
+}
+
+function hidePopupAntrian() {
+  document.getElementById("popupAntrian").classList.add("hidden");
+}
+
+function addAntrian() {
+  const nama = document.getElementById("namaPelanggan").value.trim();
+  const jumlah = parseInt(document.getElementById("jumlahOrang").value.trim());
+  if (!nama || isNaN(jumlah) || jumlah <= 0) {
+    alert("Isi nama dan jumlah orang dengan benar.");
+    return;
+  }
+
+  const waktu = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  antrian.push({ nama, jumlah, waktu });
+
+  document.getElementById("namaPelanggan").value = "";
+  document.getElementById("jumlahOrang").value = "";
+  hidePopupAntrian();
+  renderAntrian();
+}
+
+function hapusPelanggan(index) {
+  const pelanggan = daftarPelanggan[index];
+  const meja = mejaData.find(m => m.nomor === pelanggan.meja);
+  if (meja) meja.status = "kosong";
+  daftarPelanggan.splice(index, 1);
+  renderMeja();
+  renderDaftarPelanggan();
+}
+
+function goToPesanan() {
+  localStorage.setItem("rms_pesanan", JSON.stringify(daftarPelanggan));
+  window.location.href = "pesanan.html";
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  renderMeja();
+  renderAntrian();
+  renderDaftarPelanggan();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Daftar Meja</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+  <!-- Header -->
+  <header class="bg-[#1f4e85] text-white py-4 px-6 relative flex items-center justify-center">
+    <button onclick="history.back()" class="absolute left-4 top-1/2 -translate-y-1/2 text-white text-2xl">&larr;</button>
+    <img src="assets/img/logo.jpg" alt="Logo" class="h-10" />
+  </header>
+
+  <!-- Input Pencarian Tengah -->
+  <div class="flex justify-center py-6">
+    <input type="text" id="searchInput" placeholder="Cari No Meja / No Urut Pesanan"
+           class="w-full max-w-md px-5 py-3 border rounded-full shadow-sm focus:outline-none focus:ring" />
+  </div>
+
+  <!-- Daftar Meja -->
+  <div id="mejaContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 px-6 pb-8">
+    <!-- Kartu meja akan di-generate oleh JS -->
+  </div>
+
+  <!-- Script -->
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      const data = JSON.parse(localStorage.getItem("rms_daftar_pesanan") || "[]");
+      const container = document.getElementById("mejaContainer");
+
+      function tampilkanData(filter = "") {
+        container.innerHTML = "";
+        const hasil = data.filter(p =>
+          (p.meja || "").toString().toLowerCase().includes(filter.toLowerCase()) ||
+          (p.nama || "").toString().toLowerCase().includes(filter.toLowerCase())
+        );
+
+        hasil.forEach((item, i) => {
+          const total = typeof item.total === "number" ? item.total : 0;
+
+          const card = document.createElement("div");
+          card.className = "bg-white p-6 rounded-xl shadow-md text-center cursor-pointer hover:bg-gray-50 transition";
+          card.innerHTML = `
+            <h3 class="text-lg font-bold text-[#1f4e85]">MEJA ${item.meja || '-'}</h3>
+            <p class="font-semibold text-black">PELANGGAN NO ${String(i + 1).padStart(3, "0")}</p>
+            <p class="text-gray-500 mt-2">Total : Rp ${total.toLocaleString("id-ID")}</p>
+          `;
+          card.onclick = () => {
+            localStorage.setItem("meja_dipilih", item.meja);
+            window.location.href = "pembayaran.html";
+          };
+          container.appendChild(card);
+        });
+
+        if (hasil.length === 0) {
+          container.innerHTML = `<p class="col-span-full text-center text-gray-500">Tidak ada data ditemukan</p>`;
+        }
+      }
+
+      tampilkanData();
+
+      // Pencarian
+      document.getElementById("searchInput").addEventListener("input", (e) => {
+        tampilkanData(e.target.value);
+      });
+    });
+  </script>
+
+</body>
+</html>

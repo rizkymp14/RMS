@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>RMS Login</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-container {
+            background: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 100%;
+            text-align: center;
+            position: relative;
+        }
+
+        .login-container img {
+            max-width: 150px;
+            margin-bottom: 20px;
+            pointer-events: none; /* FIX utama */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .login-container h1 {
+            font-family: 'Comic Sans MS', cursive;
+            margin-bottom: 30px;
+            font-size: 26px;
+            color: #333;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 20px;
+            border: 2px solid #ccc;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #f8f9fa;
+            position: relative;
+            z-index: 1;
+        }
+
+        .form-input:focus {
+            border-color: #22c55e;
+            background: #fff;
+            outline: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 12px;
+            background-color: #22c55e;
+            color: black;
+            font-weight: bold;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', cursive;
+        }
+
+        .login-button:hover {
+            background-color: #16a34a;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="assets/img/logo.jpg" alt="Logo RMS" />
+        <h1>WELCOME TO RMS</h1>
+
+        <form id="loginForm">
+            <input type="text" id="username" class="form-input" placeholder="Username" required />
+            <input type="password" id="password" class="form-input" placeholder="Password" required />
+            <button type="submit" class="login-button">LOGIN</button>
+        </form>
+    </div>
+
+    <script>
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        fetch('../php/login.php', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+        })
+        .then(response => response.text())
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    const role = data.role;
+                    switch (role) {
+                        case 'pelayan': window.location.href = 'pelayan.html'; break;
+                        case 'koki': window.location.href = 'kelola-pesanan.html'; break;
+                        case 'kasir': window.location.href = 'dashboard.html'; break;
+                        case 'so': window.location.href = 'stok.html'; break;
+                        case 'owner': window.location.href = 'laporan.html'; break;
+                        default: alert('Role tidak dikenal: ' + role);
+                    }
+                } else {
+                    alert(data.message || 'Login gagal.');
+                }
+            } catch (err) {
+                alert('RESPON ERROR:\n' + text);
+            }
+        })
+        .catch(error => {
+            alert('Terjadi kesalahan saat login: ' + error.message);
+        });
+    });
+    </script>
+</body>
+</html>
